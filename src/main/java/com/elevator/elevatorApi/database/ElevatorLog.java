@@ -8,7 +8,7 @@ import java.sql.Timestamp;
 @Entity
 @Data
 @Table(name = "tbl_log_info")
-public class Log {
+public class ElevatorLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

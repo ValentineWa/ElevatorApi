@@ -1,16 +1,13 @@
 package com.elevator.elevatorApi.services;
 
 import com.elevator.elevatorApi.database.Elevator;
-import com.elevator.elevatorApi.database.Log;
 import com.elevator.elevatorApi.repositories.ElevatorRepository;
 import com.elevator.elevatorApi.repositories.LogRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.GetMapping;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +24,9 @@ public class ElevatorService {
 
     @Autowired
     private LogRepository logRepository;
+
+    @Autowired
+    private LogService logService;
 
 
 //TODO
@@ -64,7 +64,7 @@ public class ElevatorService {
 
 
     //    callElevator: Finds the nearest idle elevator and initiates the movement.
-    public void callElevator(int fromFloor, int toFloor) throws InterruptedException {
+    public void callElevator(int fromFloor, int toFloor, Long elevatorId, String user) throws InterruptedException {
         // Implement logic to move the elevator asynchronously
 
         //Find the nearest elevator
@@ -74,9 +74,9 @@ public class ElevatorService {
                 .findFirst();
         if (idleElevator.isPresent()){
             Elevator elevator = idleElevator.get();
-//            logEvent(elevator.getId(), "Called from floor "+ fromFloor + "to floor " + toFloor);
+//            logService(elevator.getId(), "Called from floor "+ fromFloor + "to floor " + toFloor);
             log.info( "Called from floor "+ fromFloor + "to floor " + toFloor);
-            moveElevator(elevator, fromFloor, toFloor);
+            moveElevator(elevator, fromFloor, toFloor, user, elevatorId);
         }
     }
 
@@ -88,9 +88,10 @@ public class ElevatorService {
         return elevatorRepository.findById(elevatorId).orElse(null);
     }
 
-    private void moveElevator(Elevator elevator, int fromFloor, int toFloor) throws InterruptedException {
+    private void moveElevator(Elevator elevator, int fromFloor, int toFloor, Long elevatorId, String user) throws InterruptedException {
         elevator.setState("moving");
         elevator.setDirection(fromFloor < toFloor ? "up" : "down");
+        logService.logEvent(elevatorId, "Elevator moved from floor " + currentFloor + " to floor " + targetFloor, user, "UPDATE elevator SET current_floor = " + targetFloor + " WHERE id = " + elevatorId);
         elevatorRepository.save(elevator);
 
         //elevator movement
@@ -99,6 +100,7 @@ public class ElevatorService {
             Thread.sleep(5000);
             currentFloor += fromFloor < toFloor ? 1 : -1;
             elevator.setCurrentFloor(currentFloor);
+            logService.logEvent(elevatorId, "Elevator moved from floor " + currentFloor + " to floor " + toFloor, user, "UPDATE elevator SET current_floor = " + toFloor + " WHERE id = " + elevatorId);
             elevatorRepository.save(elevator);
         }
 
@@ -107,10 +109,13 @@ public class ElevatorService {
         log.info( "Doors opening at floor "+ fromFloor);
         //simulate 2 sec for doors to open
         Thread.sleep(2000);
+        logService.logEvent(elevatorId, "Elevator doors opened", user, "UPDATE elevator SET door_state = 'open' WHERE id = " + elevatorId);
+
 
         //Move to destination floor
         elevator.setDoorState("closed");
         log.info( "Doors closing at floor "+ fromFloor);
+        logService.logEvent(elevatorId, "Elevator doors closed", user, "UPDATE elevator SET door_state = 'closed' WHERE id = " + elevatorId);
         while(currentFloor != toFloor){
             Thread.sleep(5000);
             currentFloor += fromFloor < toFloor ? 1 : -1;
@@ -120,6 +125,7 @@ public class ElevatorService {
 
         //door opening at dropoff
         elevator.setDoorState("open");
+        logService.logEvent(elevatorId, "Elevator doors opened", user, "UPDATE elevator SET door_state = 'open' WHERE id = " + elevatorId);
         log.info( "Doors opening at destination floor "+ fromFloor);
         Thread.sleep(2000);
 
@@ -128,6 +134,7 @@ public class ElevatorService {
         elevator.setState("idle");
         elevator.setDirection(null);
         elevatorRepository.save(elevator);
+        logService.logEvent(elevatorId, "Elevator doors closed", user, "UPDATE elevator SET door_state = 'closed' WHERE id = " + elevatorId);
     }
 
 }

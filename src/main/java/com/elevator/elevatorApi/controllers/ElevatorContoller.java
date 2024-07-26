@@ -1,7 +1,6 @@
 package com.elevator.elevatorApi.controllers;
 
 import com.elevator.elevatorApi.database.Elevator;
-import com.elevator.elevatorApi.database.Log;
 import com.elevator.elevatorApi.services.ElevatorService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -37,7 +36,7 @@ public class ElevatorContoller {
 //    }
 //
 //    @GetMapping("/logs")
-//    public ResponseEntity<List<Log>> getLogs() {
+//    public ResponseEntity<List<ElevatorLog>> getLogs() {
 //        return ResponseEntity.ok(elevatorService.getLogs());
 //    }
 
