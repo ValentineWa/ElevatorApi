@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: ezra-elevator-api
+
+server:
+  port: 8080
+
+elevator:
+  count: 2
+  number-of-floors: 7
+  movement-time: 5
+  holding-time: 5
